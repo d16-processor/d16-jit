@@ -8,17 +8,20 @@
 #include <assert.h>
 #include <stdio.h>
 #include <sys/mman.h>
-
+#define GLOB_MAX 256
 
 void initjit(dasm_State **state, const void *actionlist);
 void *jitcode(dasm_State **state);
 void free_jitcode(void *code);
-
+void* global_labels[GLOB_MAX];
 
 
 void initjit(dasm_State **state, const void *actionlist) {
     dasm_init(state, 1);
+    dasm_setupglobal(state,global_labels,GLOB_MAX);
     dasm_setup(state, actionlist);
+    dasm_growpc(state,256);
+
 }
 
 void *jitcode(dasm_State **state) {

@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 project(d16_jit)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
+find_package(GLib REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O0 -ggdb3")
 find_program(LUA_COMMAND lua)
 
 function(dasm_process filename)
@@ -19,16 +19,10 @@ function(dasm_process filename)
     set_source_files_properties(${output} PROPERTIES GENERATED TRUE)
 endfunction()
 
-
-#set(output ${CMAKE_BINARY_DIR}/dyn_jit.c)
-#add_custom_command(
-#        OUTPUT ${output}
-#        COMMAND ${LUA_COMMAND}  -o ${CMAKE_BINARY_DIR}/dyn_jit.c ${CMAKE_SOURCE_DIR}/dyn_jit.dasc
-#)
-#set_source_files_properties(${output} PROPERTIES GENERATED TRUE)
 dasm_process(dyn_jit.dasc)
-include_directories( ${CMAKE_SOURCE_DIR})
-set(LIBS)
+include_directories( ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/dynasm)
+include_directories(${Glib_INCLUDE_DIR} ${GlibConfig_INCLUDE_DIR})
+
 set(SOURCE_FILES main.c jit_macros.h ${CMAKE_CURRENT_BINARY_DIR}/dyn_jit.c dasm_driver.c dasm_driver.h)
 add_executable(d16_jit ${SOURCE_FILES})
-target_link_libraries(d16_jit ${LIBS})
+target_link_libraries(d16_jit ${Glib_LIBRARY})

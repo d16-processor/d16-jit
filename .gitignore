@@ -3,3 +3,4 @@ build/
 *.d16
 .idea/
 .*.swp
+d16-jit/
