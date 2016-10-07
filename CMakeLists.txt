@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.5)
+project(d16_jit)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+find_package(libjit REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+include_directories(${libjit_INCLUDE_DIR})
+set(LIBS ${libjit_LIBRARY})
+set(SOURCE_FILES main.c jitter.c jitter.h jit_macros.h)
+add_executable(d16_jit ${SOURCE_FILES})
+target_link_libraries(d16_jit ${LIBS})
