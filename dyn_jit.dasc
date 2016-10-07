@@ -23,34 +23,43 @@ void finish(){
     }
     exit(0);
 }
-void branch_to(uint16_t addr){
+jit_function branch_to(uint16_t addr){
+    initjit(&state,actions);
+    printf("Compiling a branch to %04x\n",addr);
     uint16_t* instructions = main_memory + (addr/2);
     uintptr_t mem_ptr = (uintptr_t) main_memory;
     |push rbp
     |mov rbp,rsp
     |push r12
     |push r11
+
     |mov64 r12,proc_ptr
     |mov64 r11, mem_ptr
 
     while(*instructions <0xff00){
         instructions += jit_instruction(instructions);
     }
+
     |pop r11
     |pop r12
-    |pop rbp
     |callp finish
-
-    void (*func)(void) = jitcode(&state);
-    func();
+    |pop rbp
 
 
+    jit_function func = jitcode(&state);
+    return func;
+
+
+}
+void branch_test(uintptr_t ptr){
+    printf("Supposed to branch here: %p\n",ptr);
 }
 int jit_instruction(uint16_t* inst){
     uint8_t opcode = *inst >>8;
     uint8_t reg_sel = *inst & 0xff;
     uint8_t rD = reg_sel & 0x7;
     uint8_t rS = (reg_sel>>3) &0x7;
+    uint8_t conditon = (reg_sel>>3) & 0xF;
     uint16_t imm = *(inst+1);
     switch(opcode){
         case ADD:
@@ -86,6 +95,11 @@ int jit_instruction(uint16_t* inst){
         case MOV:
             |inst_rr mov
             break;
+        case CMP:
+            |mov ax, [r12+(rD*2)]
+            |mov dx, [r12+(rS*2)]
+            |cmp ax,dx
+            break;
 
 
         case ADDI:
@@ -94,14 +108,39 @@ int jit_instruction(uint16_t* inst){
         case SUBI:
             |inst_ri sub
             break;
+        case PUSHI:
+            |movsx rdx, word [r12+14]
+            |sub rdx,2
+            |mov word [r11+rdx], imm
+            |mov [r12+14], dx
+            break;
         case MOVI:
             |inst_ri mov
+            break;
+        case CMPI:
+            |mov ax, [r12+(rD*2)]
+            |cmp ax, imm
+            break;
+        case JMPI:
+            switch(conditon){
+                case AL:
+                    |mov rdi, imm
+                    |callp branch_to
+                    |jmp rax
+                    break;
+                case NE:
+                    |je >1
+                    |mov rdi, imm
+                    |callp branch_to
+                    |jmp rax
+                    |1:
+                    break;
 
+            }
+            break;
 
 
     }
+
     return (opcode & 0x80) ? 2 : 1;
-}
-void init_jit(){
-    initjit(&state,actions);
 }

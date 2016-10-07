@@ -6,8 +6,11 @@
 #define D16_JIT_JITTER_H
 
 #include <stdint.h>
-void branch_to(uint16_t addr);
+typedef void (*jit_function)(void);
+jit_function branch_to(uint16_t addr);
 void init_jit();
+
+
 typedef struct{
     uint16_t regs[8];
     uint16_t flags;
@@ -73,4 +76,22 @@ enum _Op_Type {
     SARI = 0xA4,
     KILL = 0xFF
 };
+typedef enum _condition_code {
+    NV = 0,
+    EQ = 1,
+    NE,
+    OS,
+    OC,
+    HI,
+    LS,
+    P,
+    N,
+    CS,
+    CC,
+    GE,
+    G,
+    LE,
+    L,
+    AL = 15
+} condition_code;
 #endif //D16_JIT_JITTER_H

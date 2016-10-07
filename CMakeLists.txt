@@ -3,7 +3,7 @@ project(d16_jit)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O3")
 find_program(LUA_COMMAND lua)
 
 function(dasm_process filename)

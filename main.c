@@ -7,7 +7,6 @@ uint16_t* main_memory;
 
 
 int main(int argc, char** argv){
-    init_jit();
     if(argc != 2){
         fprintf(stderr,"Usage: d16-jit [binary]\n");
         exit(1);
@@ -24,6 +23,8 @@ int main(int argc, char** argv){
         printf("0x%04x\n",*(main_memory+i));
 
     }
-    branch_to(0);
+    fflush(stdout);
+    jit_function  f = branch_to(0);
+    f();
     return 0;
 }
