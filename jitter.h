@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 void branch_to(uint16_t addr);
-
+void init_jit();
 typedef struct{
     uint16_t regs[8];
     uint16_t flags;

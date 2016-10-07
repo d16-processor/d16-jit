@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <jit/jit.h>
+
 #include "jitter.h"
-jit_context_t context;
+
 uint16_t* main_memory;
 
 
 int main(int argc, char** argv){
-    context = jit_context_create();
+    init_jit();
     if(argc != 2){
         fprintf(stderr,"Usage: d16-jit [binary]\n");
         exit(1);

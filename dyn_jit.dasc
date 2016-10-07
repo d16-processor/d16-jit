@@ -1,0 +1,107 @@
+#include "jitter.h"
+#include "dasm_driver.h"
+#include "dynasm/dasm_x86.h"
+#include <stdio.h>
+
+| .arch x64
+|.actionlist actions
+|.macro callp, addr
+|  mov64  rax, (uintptr_t)addr
+|  call   rax
+|.endmacro
+|.include jit_macros.h
+#define Dst &state
+dasm_State *state;
+processor_state proc_state;
+uintptr_t proc_ptr = (uintptr_t)&proc_state;
+extern uint16_t* main_memory;
+
+int jit_instruction(uint16_t* inst);
+void finish(){
+    for(int i=0;i<8;i++){
+        printf("r%d: %04x\n",i,proc_state.regs[i]);
+    }
+    exit(0);
+}
+void branch_to(uint16_t addr){
+    uint16_t* instructions = main_memory + (addr/2);
+    uintptr_t mem_ptr = (uintptr_t) main_memory;
+    |push rbp
+    |mov rbp,rsp
+    |push r12
+    |push r11
+    |mov64 r12,proc_ptr
+    |mov64 r11, mem_ptr
+
+    while(*instructions <0xff00){
+        instructions += jit_instruction(instructions);
+    }
+    |pop r11
+    |pop r12
+    |pop rbp
+    |callp finish
+
+    void (*func)(void) = jitcode(&state);
+    func();
+
+
+}
+int jit_instruction(uint16_t* inst){
+    uint8_t opcode = *inst >>8;
+    uint8_t reg_sel = *inst & 0xff;
+    uint8_t rD = reg_sel & 0x7;
+    uint8_t rS = (reg_sel>>3) &0x7;
+    uint16_t imm = *(inst+1);
+    switch(opcode){
+        case ADD:
+            |inst_rr add
+            break;
+        case SUB:
+            |inst_rr sub
+            break;
+        case PUSH:
+            |mov ax, [r12+(rD*2)]
+            |movsx rdx, word [r12+(14)]
+            |sub rdx,2
+            |mov [r11+rdx], ax
+            |mov [r12+14], dx
+            break;
+        case POP:
+            |movsx rdx, word [r12+14]
+            |mov ax,[r11+rdx]
+            |mov [r12+(rD*2)],ax
+            |add rdx,2
+            |mov [r12+14],dx
+            break;
+        case MOVB_R0:
+        case MOVB_R1:
+        case MOVB_R2:
+        case MOVB_R3:
+        case MOVB_R4:
+        case MOVB_R5:
+        case MOVB_R6:
+        case MOVB_R7:
+            |mov word [r12+(opcode-MOVB_R0)], reg_sel
+            break;
+        case MOV:
+            |inst_rr mov
+            break;
+
+
+        case ADDI:
+            | inst_ri add
+            break;
+        case SUBI:
+            |inst_ri sub
+            break;
+        case MOVI:
+            |inst_ri mov
+
+
+
+    }
+    return (opcode & 0x80) ? 2 : 1;
+}
+void init_jit(){
+    initjit(&state,actions);
+}
