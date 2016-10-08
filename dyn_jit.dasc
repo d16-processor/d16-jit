@@ -162,6 +162,12 @@ int jit_instruction(uint16_t* inst){
 		case RCL:
 			|shift_rr rcl
 			break;
+		case ADC:
+			|inst_rr adc
+			break;
+		case SBB:
+			|inst_rr sbb
+			break;
 		case SET:
 			switch (condition) {
 				case EQ:
@@ -221,6 +227,9 @@ int jit_instruction(uint16_t* inst){
 			|sub rdx,2
 			|mov [r11+rdx], ax
 			|mov [r12+14], dx
+			break;
+		case SAR:
+			|shift_rr sar
 			break;
 
 
@@ -337,6 +346,18 @@ int jit_instruction(uint16_t* inst){
 			break;
 		case RCLI:
 			|inst_ri rcl
+			break;
+		case ADCI:
+			|inst_ri adc
+			break;
+		case SBBI:
+			|inst_ri sbb
+			break;
+		case TESTI:
+			|inst_ri test
+			break;
+		case SARI:
+			|inst_ri sar
 			break;
 		case 0xFF: return -1;
         default:
