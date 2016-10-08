@@ -1,6 +1,7 @@
 #include "jitter.h"
 #include "dasm_driver.h"
 #include "dasm_x86.h"
+#include "cpu_intrinsics.h"
 #include <stdio.h>
 #include <glib.h>
 | .arch x64
@@ -126,6 +127,53 @@ int jit_instruction(uint16_t* inst){
 		case NEG:
 			|neg word [r12+(rD*2)]
 			break;
+		case LD:
+			if(reg_sel & BYTE_FLAG){
+				|movzx rdi, word [r12+(rS*2)]
+				|cmp rdi, 0xff00
+				|jge >1
+				|mov al, [r11+rdi]
+				|mov [r12+(rD*2)], al
+				|jmp >2
+				|1:
+				|callp io_load_byte
+				|mov [r12+(rD*2)],al
+				|2:
+			}else{
+				|movzx rdi, word [r12+(rS*2)]
+				|cmp rdi, 0xff00
+				|jge >1
+				|mov ax, [r11+rdi]
+				|mov [r12+(rD*2)], ax
+				|jmp >2
+				|1:
+				|callp io_load_word
+				|mov [r12+(rD*2)],ax
+				|2:
+			}
+			break;
+		case ST:
+			if(reg_sel & BYTE_FLAG){
+				|movzx rdi, word [r12+(rS*2)]
+				|movzx rsi, byte [r12+(rD*2)]
+				|cmp rdi, 0xff00
+				|jge >1
+				|mov [r11+rdi],r6b //si (low byte)
+				|jmp >2
+				|1:
+				|callp io_store_byte
+				|2:
+			}else{
+				|movzx rdi, word [r12+(rS*2)]
+				|movzx rsi, word [r12+(rD*2)]
+				|cmp rdi, 0xff00
+				|jge >1
+				|mov [r11+rdi],si
+				|jmp >2
+				|1:
+				|callp io_store_word
+				|2:
+			}
         case CMP:
             |mov ax, [r12+(rD*2)]
             |mov dx, [r12+(rS*2)]

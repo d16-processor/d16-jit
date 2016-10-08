@@ -94,4 +94,6 @@ typedef enum _condition_code {
     L,
     AL = 15
 } condition_code;
+#define BYTE_FLAG 0x80
+#define DISP_FLAG 0x40
 #endif //D16_JIT_JITTER_H
