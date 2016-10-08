@@ -8,6 +8,10 @@
 | mov ax, [r12+(rS*2)]
 | x word [r12+(rD*2)], ax
 |.endmacro
+|.macro shift_rr, x
+| mov cl, [r12+(rS*2)]
+| x word [r12+(rD*2)],cl
+|.endmacro
 |.macro inst_ri, x
 | x word [r12+(rD*2)], imm
 |.endmacro

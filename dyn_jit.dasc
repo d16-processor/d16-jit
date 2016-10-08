@@ -130,8 +130,18 @@ int jit_instruction(uint16_t* inst){
             |mov dx, [r12+(rS*2)]
             |cmp ax,dx
             break;
-
-
+		case SHL:
+			|shift_rr shl
+			break;
+		case SHR:
+			|shift_rr shr
+			break;
+		case ROL:
+			|shift_rr rol
+			break;
+		case RCL:
+			|shift_rr rcl
+			break;
         case ADDI:
             | inst_ri add
             break;
@@ -214,6 +224,18 @@ int jit_instruction(uint16_t* inst){
             }
 			return -1;
             break;
+		case SHLI:
+			|inst_ri shl
+			break;
+		case SHRI:
+			|inst_ri shr
+			break;
+		case ROLI:
+			|inst_ri rol
+			break;
+		case RCLI:
+			|inst_ri rcl
+			break;
 		case 0xFF: return -1;
         default:
 
