@@ -24,5 +24,9 @@
 |jmp rax
 |1:
 |.endmacro
+|.macro setcond, cond
+|mov word [r12+(rD*2)],0
+|cond byte [r12+(rD*2)]
+|.endmacro
 
 #endif //D16_JIT_JIT_MACROS_H

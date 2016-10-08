@@ -13,7 +13,7 @@ void init_jit();
 
 typedef struct{
     uint16_t regs[8];
-    uint16_t flags;
+    uint16_t link_register;
 } processor_state;
 enum _Op_Type {
     NOP = 0,

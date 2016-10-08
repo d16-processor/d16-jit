@@ -70,11 +70,12 @@ void branch_test(uintptr_t ptr){
     printf("Supposed to branch here: %lu\n",ptr);
 }
 int jit_instruction(uint16_t* inst){
+	uint16_t addr = inst-main_memory;
     uint8_t opcode = *inst >>8;
     uint8_t reg_sel = *inst & 0xff;
     uint8_t rD = reg_sel & 0x7;
     uint8_t rS = (reg_sel>>3) &0x7;
-    uint8_t conditon = (reg_sel>>3) & 0xF;
+    uint8_t condition = (reg_sel>>3) & 0xF;
     uint16_t imm = *(inst+1);
     switch(opcode){
         case ADD:
@@ -130,6 +131,25 @@ int jit_instruction(uint16_t* inst){
             |mov dx, [r12+(rS*2)]
             |cmp ax,dx
             break;
+		case JMP:
+			if(condition != AL){
+				fprintf(stderr, "Conditional indirect jumps not supported yet!\n");
+				exit(1);
+			}
+			|movzx rdi, word [r12+(rD*2)]
+			|callp branch_to
+			|mov rsp,rbp
+			|pop rbp
+			|jmp rax
+			return -1;
+			break;
+		case SPEC:
+			|movzx rdi, word [r12+16]
+			|callp branch_to
+			|mov rsp,rbp
+			|pop rbp
+			|jmp rax
+			return -1;
 		case SHL:
 			|shift_rr shl
 			break;
@@ -142,6 +162,70 @@ int jit_instruction(uint16_t* inst){
 		case RCL:
 			|shift_rr rcl
 			break;
+		case SET:
+			switch (condition) {
+				case EQ:
+					|setcond sete
+					break;
+				case NE:
+					|setcond setne
+					break;
+				case OS:
+					|setcond seto
+					break;
+				case OC:
+					|setcond setno
+					break;
+				case HI:
+					|setcond seta
+					break;
+				case LS:
+					|setcond setbe
+					break;
+				case P:
+					|setcond setns
+					break;
+				case N:
+					|setcond sets
+					break;
+				case CS:
+					|setcond setc
+					break;
+				case CC:
+					|setcond setnc
+					break;
+				case GE:
+					|setcond setge
+					break;
+				case G:
+					|setcond setg
+					break;
+				case LE:
+					|setcond setle
+					break;
+				case L:
+					|setcond setl
+					break;
+
+
+			}
+
+
+		case TEST:
+			|inst_rr test
+			break;
+
+		case PUSHLR:
+			|mov ax, [r12+16]
+			|movsx rdx, word [r12+(14)]
+			|sub rdx,2
+			|mov [r11+rdx], ax
+			|mov [r12+14], dx
+			break;
+
+
+
+
         case ADDI:
             | inst_ri add
             break;
@@ -171,7 +255,7 @@ int jit_instruction(uint16_t* inst){
             |cmp ax, imm
             break;
         case JMPI:
-            switch(conditon){
+            switch(condition){
                 case AL:
                     |mov rdi, imm
                     |callp branch_to
@@ -224,6 +308,24 @@ int jit_instruction(uint16_t* inst){
             }
 			return -1;
             break;
+		case CALLI:
+			switch(condition){
+				case AL:
+					|mov rdi, imm
+					|mov word [r12+16], addr
+					|callp branch_to
+					|mov rsp,rbp
+					|pop rbp
+					|jmp rax
+					break;
+				default:
+					fprintf(stderr,"Conditional CALLs not supported yet.\n");
+					exit(1);
+
+			}
+			return -1;
+			break;
+
 		case SHLI:
 			|inst_ri shl
 			break;
