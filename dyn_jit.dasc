@@ -132,12 +132,12 @@ int jit_instruction(uint16_t* inst){
 				|movzx rdi, word [r12+(rS*2)]
 				|cmp rdi, 0xff00
 				|jge >1
-				|mov al, [r11+rdi]
-				|mov [r12+(rD*2)], al
+				|movzx rax, byte [r11+rdi]
+				|mov [r12+(rD*2)], ax
 				|jmp >2
 				|1:
 				|callp io_load_byte
-				|mov [r12+(rD*2)],al
+				|mov [r12+(rD*2)],ax
 				|2:
 			}else{
 				|movzx rdi, word [r12+(rS*2)]
@@ -306,6 +306,104 @@ int jit_instruction(uint16_t* inst){
 			break;
 		case XORI:
 			|inst_ri xor
+			break;
+		case LDI:
+			if(reg_sel & DISP_FLAG){
+				if(reg_sel & BYTE_FLAG){
+					|mov rdi, imm
+					|add di, word [r12+(rS*2)]
+					|cmp rdi, 0xff00
+					|jge >1
+					|movzx rax, byte [r11+rdi]
+					|mov [r12+(rD*2)], ax
+					|jmp >2
+					|1:
+					|callp io_load_byte
+					|mov [r12+(rD*2)], ax
+					|2:
+				}else{
+					|mov rdi, imm
+					|add di, word [r12+(rS*2)]
+					|cmp rdi, 0xff00
+					|jge >1
+					|mov ax, [r11+rdi]
+					|mov [r12+(rD*2)], ax
+					|jmp >2
+					|1:
+					|callp io_load_word
+					|mov [r12+(rD*2)], ax
+					|2:
+				}
+			}else{
+				if(reg_sel & BYTE_FLAG){
+					if(imm >=0xff00){
+						|mov rdi, imm
+						|callp io_load_byte
+						|mov [r12+(rD*2)],al
+					}else{
+						|movzx rax, byte [r11+imm]
+						|mov [r12+(rD*2)],ax
+					}
+				}else{
+					if(imm >=0xff00){
+						|mov rdi, imm
+						|callp io_load_word
+						|mov [r12+(rD*2)],ax
+					}else{
+						|mov ax, [r11+imm]
+						|mov [r12+(rD*2)],ax
+					}
+				}
+			}
+			break;
+		case STI:
+			if(reg_sel & DISP_FLAG){
+				if(reg_sel & BYTE_FLAG){
+					|mov rdi,imm
+					|add di, [r12+(rS*2)]
+					|movzx rsi, byte [r12+(rD*2)]
+					|cmp rdi, 0xff00
+					|jge >1
+					|mov [r11+rdi], r6b
+					|jmp >2
+					|1:
+					|callp io_store_byte
+					|2:
+				}
+				else{
+					|mov rdi,imm
+					|add di, [r12+(rS*2)]
+					|movzx rsi, word [r12+(rD*2)]
+					|cmp rdi, 0xff00
+					|jge >1
+					|mov [r11+rdi], si
+					|jmp >2
+					|1:
+					|callp io_store_word
+					|2:
+				}
+			}else{
+				if(imm >= 0xff00){
+					if(reg_sel & BYTE_FLAG){
+						|mov rdi, imm
+						|mov r6b, [r12+(rD*2)] //si (low byte)
+						|callp io_store_byte
+					}else{
+						|mov rdi,imm
+						|mov si, [r12+(rD*2)]
+						|callp io_store_word
+					}
+				}else{
+					if(reg_sel & BYTE_FLAG){
+						|mov al, [r12+(rD*2)]
+						|mov [r11+imm],ax
+					}else{
+						|mov ax, [r12+(rD*2)]
+						|mov [r11+imm],ax
+					}
+				}
+			}
+
 			break;
         case CMPI:
             |mov ax, [r12+(rD*2)]
