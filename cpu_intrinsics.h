@@ -10,6 +10,10 @@
 #define cpu_intrinsics_h
 #include <stdint.h>
 #include <stdio.h>
+#define IO_UART_DATA 0xff02
+#define IO_UART_STATUS 0xff03
+#define IO_UART_BAUD 0xff04
+
 void io_store_word(uint16_t addr, uint16_t val);
 void io_store_byte(uint16_t addr, uint8_t val);
 uint16_t io_load_word(uint16_t addr);

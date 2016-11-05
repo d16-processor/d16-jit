@@ -2,6 +2,7 @@
 #include "dasm_driver.h"
 #include "dasm_x86.h"
 #include "cpu_intrinsics.h"
+#include "io.h"
 #include <stdio.h>
 #include <glib.h>
 | .arch x64
@@ -25,6 +26,7 @@ void finish(){
     for(int i=0;i<8;i++){
         printf("r%d: %04x\n",i,proc_state.regs[i]);
     }
+	io_destroy();
     exit(0);
 }
 void init_jit(){
@@ -43,17 +45,17 @@ jit_function branch_to(uint16_t addr){
     |push rbp
     |mov rbp,rsp
     |push r12
-    |push r11
+    |push r13
     //|push rbx
 
     |mov64 r12,proc_ptr
-    |mov64 r11, mem_ptr
+    |mov64 r13, mem_ptr
 	int bytes = 0;
     while((bytes = jit_instruction(instructions))!= -1){
         instructions += bytes;
     }
     //|pop rbx
-    |pop r11
+    |pop r13
     |pop r12
     |mov  rsp, rbp
     |callp finish
@@ -89,12 +91,12 @@ int jit_instruction(uint16_t* inst){
             |mov ax, [r12+(rD*2)]
             |movsx rdx, word [r12+(14)]
             |sub rdx,2
-            |mov [r11+rdx], ax
+            |mov [r13+rdx], ax
             |mov [r12+14], dx
             break;
         case POP:
             |movsx rdx, word [r12+14]
-            |mov ax,[r11+rdx]
+            |mov ax,[r13+rdx]
             |mov [r12+(rD*2)],ax
             |add rdx,2
             |mov [r12+14],dx
@@ -132,7 +134,7 @@ int jit_instruction(uint16_t* inst){
 				|movzx rdi, word [r12+(rS*2)]
 				|cmp rdi, 0xff00
 				|jge >1
-				|movzx rax, byte [r11+rdi]
+				|movzx rax, byte [r13+rdi]
 				|mov [r12+(rD*2)], ax
 				|jmp >2
 				|1:
@@ -143,7 +145,7 @@ int jit_instruction(uint16_t* inst){
 				|movzx rdi, word [r12+(rS*2)]
 				|cmp rdi, 0xff00
 				|jge >1
-				|mov ax, [r11+rdi]
+				|mov ax, [r13+rdi]
 				|mov [r12+(rD*2)], ax
 				|jmp >2
 				|1:
@@ -158,7 +160,7 @@ int jit_instruction(uint16_t* inst){
 				|movzx rsi, byte [r12+(rD*2)]
 				|cmp rdi, 0xff00
 				|jge >1
-				|mov [r11+rdi],r6b //si (low byte)
+				|mov [r13+rdi],r6b //si (low byte)
 				|jmp >2
 				|1:
 				|callp io_store_byte
@@ -168,9 +170,10 @@ int jit_instruction(uint16_t* inst){
 				|movzx rsi, word [r12+(rD*2)]
 				|cmp rdi, 0xff00
 				|jge >1
-				|mov [r11+rdi],si
+				|mov [r13+rdi],si
 				|jmp >2
 				|1:
+
 				|callp io_store_word
 				|2:
 			}
@@ -273,7 +276,7 @@ int jit_instruction(uint16_t* inst){
 			|mov ax, [r12+16]
 			|movsx rdx, word [r12+(14)]
 			|sub rdx,2
-			|mov [r11+rdx], ax
+			|mov [r13+rdx], ax
 			|mov [r12+14], dx
 			break;
 		case SAR:
@@ -292,7 +295,7 @@ int jit_instruction(uint16_t* inst){
         case PUSHI:
             |movsx rdx, word [r12+14]
             |sub rdx,2
-            |mov word [r11+rdx], imm
+            |mov word [r13+rdx], imm
             |mov [r12+14], dx
             break;
         case MOVI:
@@ -314,7 +317,7 @@ int jit_instruction(uint16_t* inst){
 					|add di, word [r12+(rS*2)]
 					|cmp rdi, 0xff00
 					|jge >1
-					|movzx rax, byte [r11+rdi]
+					|movzx rax, byte [r13+rdi]
 					|mov [r12+(rD*2)], ax
 					|jmp >2
 					|1:
@@ -326,7 +329,7 @@ int jit_instruction(uint16_t* inst){
 					|add di, word [r12+(rS*2)]
 					|cmp rdi, 0xff00
 					|jge >1
-					|mov ax, [r11+rdi]
+					|mov ax, [r13+rdi]
 					|mov [r12+(rD*2)], ax
 					|jmp >2
 					|1:
@@ -341,7 +344,7 @@ int jit_instruction(uint16_t* inst){
 						|callp io_load_byte
 						|mov [r12+(rD*2)],al
 					}else{
-						|movzx rax, byte [r11+imm]
+						|movzx rax, byte [r13+imm]
 						|mov [r12+(rD*2)],ax
 					}
 				}else{
@@ -350,7 +353,7 @@ int jit_instruction(uint16_t* inst){
 						|callp io_load_word
 						|mov [r12+(rD*2)],ax
 					}else{
-						|mov ax, [r11+imm]
+						|mov ax, [r13+imm]
 						|mov [r12+(rD*2)],ax
 					}
 				}
@@ -364,7 +367,7 @@ int jit_instruction(uint16_t* inst){
 					|movzx rsi, byte [r12+(rD*2)]
 					|cmp rdi, 0xff00
 					|jge >1
-					|mov [r11+rdi], r6b
+					|mov [r13+rdi], r6b
 					|jmp >2
 					|1:
 					|callp io_store_byte
@@ -376,7 +379,7 @@ int jit_instruction(uint16_t* inst){
 					|movzx rsi, word [r12+(rD*2)]
 					|cmp rdi, 0xff00
 					|jge >1
-					|mov [r11+rdi], si
+					|mov [r13+rdi], si
 					|jmp >2
 					|1:
 					|callp io_store_word
@@ -396,10 +399,10 @@ int jit_instruction(uint16_t* inst){
 				}else{
 					if(reg_sel & BYTE_FLAG){
 						|mov al, [r12+(rD*2)]
-						|mov [r11+imm],ax
+						|mov [r13+imm],ax
 					}else{
 						|mov ax, [r12+(rD*2)]
-						|mov [r11+imm],ax
+						|mov [r13+imm],ax
 					}
 				}
 			}
@@ -467,7 +470,7 @@ int jit_instruction(uint16_t* inst){
 			switch(condition){
 				case AL:
 					|mov rdi, imm
-					|mov word [r12+16], addr
+					|mov word [r12+16], (addr+2)*2
 					|callp branch_to
 					|mov rsp,rbp
 					|pop rbp

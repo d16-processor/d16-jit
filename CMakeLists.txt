@@ -23,6 +23,6 @@ dasm_process(dyn_jit.dasc)
 include_directories( ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/dynasm)
 include_directories(${Glib_INCLUDE_DIR} ${GlibConfig_INCLUDE_DIR})
 
-set(SOURCE_FILES main.c jit_macros.h ${CMAKE_CURRENT_BINARY_DIR}/dyn_jit.c dasm_driver.c dasm_driver.h cpu_intrinsics.c)
+set(SOURCE_FILES main.c jit_macros.h ${CMAKE_CURRENT_BINARY_DIR}/dyn_jit.c dasm_driver.c dasm_driver.h cpu_intrinsics.c io.c)
 add_executable(d16_jit ${SOURCE_FILES})
 target_link_libraries(d16_jit ${Glib_LIBRARY})

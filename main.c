@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "io.h"
 #include "jitter.h"
 
 uint16_t* main_memory;
 
 
 int main(int argc, char** argv){
+	io_init();
     init_jit();
     if(argc != 2){
         fprintf(stderr,"Usage: d16-jit [binary]\n");
