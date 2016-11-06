@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(d16_jit)
+project(d16-jit)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(GLib REQUIRED)
@@ -24,5 +24,6 @@ include_directories( ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/dynasm)
 include_directories(${Glib_INCLUDE_DIR} ${GlibConfig_INCLUDE_DIR})
 
 set(SOURCE_FILES main.c jit_macros.h ${CMAKE_CURRENT_BINARY_DIR}/dyn_jit.c dasm_driver.c dasm_driver.h cpu_intrinsics.c io.c)
-add_executable(d16_jit ${SOURCE_FILES})
-target_link_libraries(d16_jit ${Glib_LIBRARY})
+add_executable(d16-jit ${SOURCE_FILES})
+target_link_libraries(d16-jit ${Glib_LIBRARY})
+install(TARGETS d16-jit DESTINATION bin)

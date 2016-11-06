@@ -23,9 +23,9 @@ extern uint16_t* main_memory;
 
 int jit_instruction(uint16_t* inst);
 void finish(){
-    for(int i=0;i<8;i++){
-        printf("r%d: %04x\n",i,proc_state.regs[i]);
-    }
+    //for(int i=0;i<8;i++){
+      //  printf("r%d: %04x\n",i,proc_state.regs[i]);
+    //}
 	io_destroy();
     exit(0);
 }
@@ -89,13 +89,13 @@ int jit_instruction(uint16_t* inst){
             break;
         case PUSH:
             |mov ax, [r12+(rD*2)]
-            |movsx rdx, word [r12+(14)]
+            |movzx rdx, word [r12+(14)]
             |sub rdx,2
             |mov [r13+rdx], ax
             |mov [r12+14], dx
             break;
         case POP:
-            |movsx rdx, word [r12+14]
+            |movzx rdx, word [r12+14]
             |mov ax,[r13+rdx]
             |mov [r12+(rD*2)],ax
             |add rdx,2
@@ -274,7 +274,7 @@ int jit_instruction(uint16_t* inst){
 
 		case PUSHLR:
 			|mov ax, [r12+16]
-			|movsx rdx, word [r12+(14)]
+			|movzx rdx, word [r12+(14)]
 			|sub rdx,2
 			|mov [r13+rdx], ax
 			|mov [r12+14], dx
@@ -293,7 +293,7 @@ int jit_instruction(uint16_t* inst){
             |inst_ri sub
             break;
         case PUSHI:
-            |movsx rdx, word [r12+14]
+            |movzx rdx, word [r12+14]
             |sub rdx,2
             |mov word [r13+rdx], imm
             |mov [r12+14], dx
