@@ -23,10 +23,10 @@ extern uint16_t* main_memory;
 
 int jit_instruction(uint16_t* inst);
 void finish(){
-    //for(int i=0;i<8;i++){
-      //  printf("r%d: %04x\n",i,proc_state.regs[i]);
-    //}
 	io_destroy();
+	for(int i=0;i<8;i++){
+	  	printf("r%d: %04x\n",i,proc_state.regs[i]);
+    }
     exit(0);
 }
 void init_jit(){

@@ -13,5 +13,6 @@
 #include <stdint.h>
 void io_init();
 void cpu_thread_write_byte(uint8_t byte);
+uint8_t io_read_status();
 void io_destroy();
 #endif /* io_h */

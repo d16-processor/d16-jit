@@ -14,6 +14,11 @@
 #define IO_UART_STATUS 0xff03
 #define IO_UART_BAUD 0xff04
 
+#define UART_TX_NOT_FULL 1
+#define UART_TX_EMPTY 2
+#define UART_RX_DATA_READY 4
+#define UART_RX_OVERRUN 8
+
 void io_store_word(uint16_t addr, uint16_t val);
 void io_store_byte(uint16_t addr, uint8_t val);
 uint16_t io_load_word(uint16_t addr);
