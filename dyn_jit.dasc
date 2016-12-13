@@ -4,6 +4,7 @@
 #include "cpu_intrinsics.h"
 #include "io.h"
 #include <stdio.h>
+#include <stdbool.h>
 #include <glib.h>
 | .arch x64
 |.globals glob_
@@ -20,6 +21,7 @@ GHashTable* trace_cache;
 processor_state proc_state;
 uintptr_t proc_ptr = (uintptr_t)&proc_state;
 extern uint16_t* main_memory;
+bool count_instructions = true;
 
 int jit_instruction(uint16_t* inst);
 void finish(){
@@ -27,6 +29,7 @@ void finish(){
 	for(int i=0;i<8;i++){
 	  	printf("r%d: %04x\n",i,proc_state.regs[i]);
     }
+    printf("Instructions executed: %d\n", proc_state.instructions_executed);
     exit(0);
 }
 void init_jit(){
@@ -80,6 +83,13 @@ int jit_instruction(uint16_t* inst){
     uint8_t rS = (reg_sel>>3) &0x7;
     uint8_t condition = (reg_sel>>3) & 0xF;
     uint16_t imm = *(inst+1);
+    if(count_instructions){
+        | push rax
+        | mov eax, [r12+20]
+        | lea eax, [eax+1]
+        | mov [r12+20], eax
+        | pop rax
+    }
     switch(opcode){
         case ADD:
             |inst_rr add
@@ -514,6 +524,5 @@ int jit_instruction(uint16_t* inst){
             break;
 
     }
-
     return (opcode & 0x80) ? 2 : 1;
 }

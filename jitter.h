@@ -14,7 +14,10 @@ void init_jit();
 typedef struct{
     uint16_t regs[8];
     uint16_t link_register;
+    uint16_t padding;
+    uint32_t instructions_executed;
 } processor_state;
+#define INSTRS_EXECUTED 20 //index into struct
 enum _Op_Type {
     NOP = 0,
     ADD,

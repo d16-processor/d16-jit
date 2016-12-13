@@ -25,7 +25,7 @@ void* io_thread_process(void * unused){
 		while((bytes = read(fd[0], buf, sizeof(buf))) != EOF){
 			fwrite(buf, 1, bytes, stdout);
             unsigned int btx = 0;
-           if(bytes > 1)
+           if(bytes > 0)
                 btx = atomic_fetch_add(&bytes_tx,bytes); 
             /*printf("bytes_tx (read) %d\n",btx);*/
 		}
@@ -50,7 +50,7 @@ void io_init(){
 void cpu_thread_write_byte(uint8_t byte){
     unsigned int bfree = atomic_load(&bytes_tx);
     if(bfree >0){
-        while(atomic_compare_exchange_strong(&bytes_tx,&bfree,bfree-1)){}
+        while(!atomic_compare_exchange_strong(&bytes_tx,&bfree,bfree-1)){}
 	    write(fd[1], &byte, 1);
     }
 
