@@ -10,6 +10,7 @@
 #define cpu_intrinsics_h
 #include <stdint.h>
 #include <stdio.h>
+#define IO_LED_DATA 0xff00
 #define IO_UART_DATA 0xff02
 #define IO_UART_STATUS 0xff03
 #define IO_UART_BAUD 0xff04

@@ -13,8 +13,21 @@
 void io_store_word(uint16_t addr, uint16_t val){
 
 }
+void write_leds(uint8_t data){
+    printf("LEDS: ");
+    for(int i=128;i>0;i=i>>1){
+        if(i&data)
+            printf("1");
+        else
+            printf("0");
+    }
+    printf("\n");
+}
 void io_store_byte(uint16_t addr, uint8_t val){
 	switch (addr){
+        case IO_LED_DATA:
+            write_leds(val);
+            break;
 		case IO_UART_DATA:
 			cpu_thread_write_byte(val);
 			break;
