@@ -100,7 +100,7 @@ int jit_instruction(uint16_t* inst){
         case PUSH:
             |mov ax, [r12+(rD*2)]
             |movzx rdx, word [r12+(14)]
-            |sub rdx,2
+            |lea rdx,[rdx-2]
             |mov [r13+rdx], ax
             |mov [r12+14], dx
             break;
@@ -108,7 +108,7 @@ int jit_instruction(uint16_t* inst){
             |movzx rdx, word [r12+14]
             |mov ax,[r13+rdx]
             |mov [r12+(rD*2)],ax
-            |add rdx,2
+            |lea rdx, [rdx+2]
             |mov [r12+14],dx
             break;
         case MOVB_R0:
@@ -285,7 +285,7 @@ int jit_instruction(uint16_t* inst){
 		case PUSHLR:
 			|mov ax, [r12+16]
 			|movzx rdx, word [r12+(14)]
-			|sub rdx,2
+			|lea rdx,[rdx-2]
 			|mov [r13+rdx], ax
 			|mov [r12+14], dx
 			break;
@@ -304,7 +304,7 @@ int jit_instruction(uint16_t* inst){
             break;
         case PUSHI:
             |movzx rdx, word [r12+14]
-            |sub rdx,2
+            |lea rdx,[rdx-2]
             |mov word [r13+rdx], imm
             |mov [r12+14], dx
             break;
