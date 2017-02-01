@@ -1,19 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <stdbool.h>
 #include "io.h"
 #include "jitter.h"
-
+bool trace_mode = false;
 uint16_t* main_memory;
-
+#define FMT_STRING "t"
 
 int main(int argc, char** argv){
+    setenv("POSIXLY_CORRECT", "1",1);
+    int c;
+    FILE* bin = NULL;
+    while(optind < argc){
+        if((c = getopt(argc,argv, FMT_STRING)) != -1){
+            switch(c){
+                case 't':
+                    trace_mode = true;
+                    break;
+            }
+        }
+        else{
+            if(bin == NULL){
+                bin = fopen(argv[optind],"rb");
+            }
+            optind++;
+        }
+    }
 	io_init();
     init_jit();
-    if(argc != 2){
-        fprintf(stderr,"Usage: d16-jit [binary]\n");
-        exit(1);
-    }
-    FILE* bin = fopen(argv[1], "rb");
+    
     if(bin == NULL){
         fprintf(stderr, "Error opening file\n");
         exit(1);
