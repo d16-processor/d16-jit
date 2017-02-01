@@ -40,8 +40,14 @@ uint16_t io_load_word(uint16_t addr){
 	return 0;
 }
 uint8_t io_load_byte(uint16_t addr){
-	if(addr == IO_UART_STATUS){
-		return io_read_status();
+    switch(addr){
+        case IO_UART_STATUS:
+            return io_read_status();
+        case IO_UART_DATA:
+            return cpu_thread_read_byte();
+        default:
+            fprintf(stderr, "Read from invalid IO address: %x\n",addr);
+            break;
 	}
 	return 0;
 }

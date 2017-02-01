@@ -13,11 +13,13 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdatomic.h>
-pthread_t io_thread;
+pthread_t io_thread_write;
+pthread_t io_thread_read;
 int fd[2];
+int read_fd[2];
 bool thread_run = true;
-volatile atomic_uint bytes_tx;
-void* io_thread_process(void * unused){
+volatile atomic_uint bytes_tx, bytes_rx;
+void* io_thread_write_process(void * unused){
 
 	char buf[128];
 	size_t bytes = 0;
@@ -34,18 +36,45 @@ void* io_thread_process(void * unused){
 
 return NULL;
 }
+void* io_thread_read_process(void* unused){
+    char buf[128];
+    size_t bytes = 0;
+    /*close(read_fd[0]);*/
+    /*setvbuf(stdin,NULL,_IONBF,0);*/
+    while(thread_run){
+        int spaces = atomic_load(&bytes_rx);
+        if(spaces > 0)
+            if((bytes = fread(buf,1,1,stdin)) != EOF){
+                if(bytes != 0){
+                    write(read_fd[1],buf,bytes);
+                    atomic_fetch_sub(&bytes_rx,bytes);
+                    /*fprintf(stderr,"Read byte: %c spaces: %d\n",*buf,spaces);*/
+                }
+            }
+
+    }
+    return NULL;
+}
 uint8_t io_read_status(void){
+    usleep(1000);
     uint8_t status = 0;
     unsigned int btx = atomic_load(&bytes_tx);
     status |= btx > 0 ? UART_TX_NOT_FULL : 0;
     status |= btx ==8 ? UART_TX_EMPTY : 0;
+    int brx = atomic_load(&bytes_rx);
+    status |= brx < 8 ? UART_RX_DATA_READY : 0;
+    status |= brx < 0 ? UART_RX_OVERRUN : 0;
+    
     return status;
 }
 
 void io_init(){
 	pipe(fd);
+    pipe(read_fd);
     atomic_store(&bytes_tx,8);
-	pthread_create(&io_thread, NULL, io_thread_process, NULL);
+    atomic_store(&bytes_rx,8);
+	pthread_create(&io_thread_write, NULL, io_thread_write_process, NULL);
+    pthread_create(&io_thread_read, NULL, io_thread_read_process, NULL);
 }
 void cpu_thread_write_byte(uint8_t byte){
     unsigned int bfree = atomic_load(&bytes_tx);
@@ -55,10 +84,22 @@ void cpu_thread_write_byte(uint8_t byte){
     }
 
 }
+uint8_t cpu_thread_read_byte(void){
+    int spaces = atomic_load(&bytes_rx);
+    uint8_t res;
+    if(spaces < 8){
+        atomic_fetch_add(&bytes_rx,1);
+        read(read_fd[0],&res,1);
+        /*fprintf(stderr,"piped byte: %c spaces: %d\n",res,spaces);*/
+    }
+    return res;
+}
 void io_destroy(){
 	close(fd[1]);
 	close(fd[0]);
+
 	thread_run = false;
-	pthread_join(io_thread, NULL);
+	pthread_join(io_thread_write, NULL);
+    pthread_cancel(io_thread_read);
 
 }
