@@ -39,7 +39,7 @@ int main(int argc, char** argv){
     fclose(bin);
     
     jit_function  f = branch_to(0);
-    f();
+    f(f);
 
     return 0;
 }

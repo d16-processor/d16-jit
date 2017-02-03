@@ -56,12 +56,16 @@ void* io_thread_read_process(void* unused){
     return NULL;
 }
 uint8_t io_read_status(void){
-    usleep(1000);
     uint8_t status = 0;
     unsigned int btx = atomic_load(&bytes_tx);
+    int brx = atomic_load(&bytes_rx);
+    if(btx != 8 || brx == 8){
+        usleep(100);
+        btx = atomic_load(&bytes_tx);
+        brx = atomic_load(&bytes_rx);
+    }
     status |= btx > 0 ? UART_TX_NOT_FULL : 0;
     status |= btx ==8 ? UART_TX_EMPTY : 0;
-    int brx = atomic_load(&bytes_rx);
     status |= brx < 8 ? UART_RX_DATA_READY : 0;
     status |= brx < 0 ? UART_RX_OVERRUN : 0;
     

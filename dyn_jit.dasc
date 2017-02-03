@@ -27,7 +27,7 @@ bool count_instructions = true;
 char* inst_names[128] = {"NOP","ADD","SUB","PUSH","POP","MOVB","MOVB","MOVB","MOVB","MOVB","MOVB","MOVB","MOVB","MOV","AND","OR","XOR","NOT","NEG","LD","ST","CMP","JMP","CALL","RET","SHL","SHR","ROL","RCL","LDCP","STCP","ADC","SBB","SET","TEST","PUSHLR","SAR",0};
 int jit_instruction(uint16_t* inst);
 void finish(){
-	io_destroy();
+    io_destroy();
 	for(int i=0;i<8;i++){
 	  	printf("r%d: %04x\n",i,proc_state.regs[i]);
     }
@@ -35,8 +35,9 @@ void finish(){
     exit(0);
 }
 void init_jit(){
-    trace_cache = g_hash_table_new(g_direct_hash,g_direct_equal);
+    trace_cache = g_hash_table_new_full(g_direct_hash,g_direct_equal,NULL,free_jitcode);
     inst_names[127] = "KILL";
+    inst_names[126] = "FLUSH";
 }
 void print_flags(long long flags){ 
     //this method depends on the flag locations in the x86_64 RFLAGS register
@@ -68,6 +69,13 @@ void jit_trace(uint16_t* inst){
         |popf
     }
 }
+gboolean foreach_clear_table(void* u1,void* value,void* nodelete){
+    return (jit_function*)value != (jit_function*)nodelete;
+}
+void flush(jit_function* func){
+    fprintf(stderr,"Flushing trace cache\n");
+    g_hash_table_foreach_remove(trace_cache,foreach_clear_table,func);
+}
 jit_function branch_to(uint16_t addr){
     //printf("branch to: %04x\n",addr);
     if(g_hash_table_contains(trace_cache,GINT_TO_POINTER(addr))){
@@ -82,7 +90,9 @@ jit_function branch_to(uint16_t addr){
     |mov rbp,rsp
     |push r12
     |push r13
-    //|push rbx
+    |push rbx
+    |push r14
+    |mov r14,rdi
 
     |mov64 r12,proc_ptr
     |mov64 r13, mem_ptr
@@ -90,7 +100,8 @@ jit_function branch_to(uint16_t addr){
     while((bytes = jit_instruction(instructions))!= -1){
         instructions += bytes;
     }
-    //|pop rbx
+    |pop r14
+    |pop rbx
     |pop r13
     |pop r12
     |mov  rsp, rbp
@@ -102,8 +113,6 @@ jit_function branch_to(uint16_t addr){
     g_hash_table_insert(trace_cache,GINT_TO_POINTER(addr),func);
 
     return func;
-
-
 }
 void branch_test(uintptr_t ptr){
     printf("Supposed to branch here: %lu\n",ptr);
@@ -235,6 +244,7 @@ int jit_instruction(uint16_t* inst){
 			|callp branch_to
 			|mov rsp,rbp
 			|pop rbp
+            |mov rdi,rax
 			|jmp rax
 			return -1;
 			break;
@@ -243,6 +253,7 @@ int jit_instruction(uint16_t* inst){
 			|callp branch_to
 			|mov rsp,rbp
 			|pop rbp
+            |mov rdi,rax
 			|jmp rax
 			return -1;
 		case SHL:
@@ -463,6 +474,7 @@ int jit_instruction(uint16_t* inst){
                     |callp branch_to
                     |mov rsp,rbp
                     |pop rbp
+                    |mov rdi,rax
                     |jmp rax
                     return -1;
 				case EQ:
@@ -518,6 +530,7 @@ int jit_instruction(uint16_t* inst){
 					|callp branch_to
 					|mov rsp,rbp
 					|pop rbp
+                    |mov rdi,rax
 					|jmp rax
 					break;
 				default:
@@ -552,6 +565,10 @@ int jit_instruction(uint16_t* inst){
 		case SARI:
 			|inst_ri sar
 			break;
+        case 0xFE: //flush
+            |mov rdi,r14
+            |callp flush
+            return 1;
 		case 0xFF: return -1;
         default:
 

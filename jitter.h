@@ -6,7 +6,7 @@
 #define D16_JIT_JITTER_H
 
 #include <stdint.h>
-typedef void (*jit_function)(void);
+typedef void (*jit_function)(void*);
 jit_function branch_to(uint16_t addr);
 void init_jit();
 

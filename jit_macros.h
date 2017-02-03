@@ -21,6 +21,7 @@
 |callp branch_to
 |mov rsp,rbp
 |pop rbp
+|mov rdi,rax
 |jmp rax
 |1:
 |.endmacro
