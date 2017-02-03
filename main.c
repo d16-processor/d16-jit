@@ -27,7 +27,7 @@ int main(int argc, char** argv){
             optind++;
         }
     }
-	io_init();
+    io_init();
     init_jit();
     
     if(bin == NULL){

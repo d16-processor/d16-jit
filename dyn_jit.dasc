@@ -28,8 +28,8 @@ char* inst_names[128] = {"NOP","ADD","SUB","PUSH","POP","MOVB","MOVB","MOVB","MO
 int jit_instruction(uint16_t* inst);
 void finish(){
     io_destroy();
-	for(int i=0;i<8;i++){
-	  	printf("r%d: %04x\n",i,proc_state.regs[i]);
+    for(int i=0;i<8;i++){
+          printf("r%d: %04x\n",i,proc_state.regs[i]);
     }
     printf("Instructions executed: %d\n", proc_state.instructions_executed);
     exit(0);
@@ -96,7 +96,7 @@ jit_function branch_to(uint16_t addr){
 
     |mov64 r12,proc_ptr
     |mov64 r13, mem_ptr
-	int bytes = 0;
+    int bytes = 0;
     while((bytes = jit_instruction(instructions))!= -1){
         instructions += bytes;
     }
@@ -118,7 +118,7 @@ void branch_test(uintptr_t ptr){
     printf("Supposed to branch here: %lu\n",ptr);
 }
 int jit_instruction(uint16_t* inst){
-	uint16_t addr = inst-main_memory;
+    uint16_t addr = inst-main_memory;
     uint8_t opcode = *inst >>8;
     uint8_t reg_sel = *inst & 0xff;
     uint8_t rD = reg_sel & 0x7;
@@ -167,176 +167,176 @@ int jit_instruction(uint16_t* inst){
         case MOV:
             |inst_rr mov
             break;
-		case AND:
-			|inst_rr and
-			break;
-		case OR:
-			|inst_rr or
-			break;
-		case XOR:
-			|inst_rr xor
-			break;
-		case NOT:
-			|not word [r12+(rD*2)]
-			break;
-		case NEG:
-			|neg word [r12+(rD*2)]
-			break;
-		case LD:
-			if(reg_sel & BYTE_FLAG){
-				|movzx rdi, word [r12+(rS*2)]
-				|cmp rdi, 0xff00
-				|jge >1
-				|movzx rax, byte [r13+rdi]
-				|mov [r12+(rD*2)], ax
-				|jmp >2
-				|1:
-				|callp io_load_byte
-				|mov [r12+(rD*2)],ax
-				|2:
-			}else{
-				|movzx rdi, word [r12+(rS*2)]
-				|cmp rdi, 0xff00
-				|jge >1
-				|mov ax, [r13+rdi]
-				|mov [r12+(rD*2)], ax
-				|jmp >2
-				|1:
-				|callp io_load_word
-				|mov [r12+(rD*2)],ax
-				|2:
-			}
-			break;
-		case ST:
-			if(reg_sel & BYTE_FLAG){
-				|movzx rdi, word [r12+(rS*2)]
-				|movzx rsi, byte [r12+(rD*2)]
-				|cmp rdi, 0xff00
-				|jge >1
-				|mov [r13+rdi],r6b //si (low byte)
-				|jmp >2
-				|1:
-				|callp io_store_byte
-				|2:
-			}else{
-				|movzx rdi, word [r12+(rS*2)]
-				|movzx rsi, word [r12+(rD*2)]
-				|cmp rdi, 0xff00
-				|jge >1
-				|mov [r13+rdi],si
-				|jmp >2
-				|1:
+        case AND:
+            |inst_rr and
+            break;
+        case OR:
+            |inst_rr or
+            break;
+        case XOR:
+            |inst_rr xor
+            break;
+        case NOT:
+            |not word [r12+(rD*2)]
+            break;
+        case NEG:
+            |neg word [r12+(rD*2)]
+            break;
+        case LD:
+            if(reg_sel & BYTE_FLAG){
+                |movzx rdi, word [r12+(rS*2)]
+                |cmp rdi, 0xff00
+                |jge >1
+                |movzx rax, byte [r13+rdi]
+                |mov [r12+(rD*2)], ax
+                |jmp >2
+                |1:
+                |callp io_load_byte
+                |mov [r12+(rD*2)],ax
+                |2:
+            }else{
+                |movzx rdi, word [r12+(rS*2)]
+                |cmp rdi, 0xff00
+                |jge >1
+                |mov ax, [r13+rdi]
+                |mov [r12+(rD*2)], ax
+                |jmp >2
+                |1:
+                |callp io_load_word
+                |mov [r12+(rD*2)],ax
+                |2:
+            }
+            break;
+        case ST:
+            if(reg_sel & BYTE_FLAG){
+                |movzx rdi, word [r12+(rS*2)]
+                |movzx rsi, byte [r12+(rD*2)]
+                |cmp rdi, 0xff00
+                |jge >1
+                |mov [r13+rdi],r6b //si (low byte)
+                |jmp >2
+                |1:
+                |callp io_store_byte
+                |2:
+            }else{
+                |movzx rdi, word [r12+(rS*2)]
+                |movzx rsi, word [r12+(rD*2)]
+                |cmp rdi, 0xff00
+                |jge >1
+                |mov [r13+rdi],si
+                |jmp >2
+                |1:
 
-				|callp io_store_word
-				|2:
-			}
+                |callp io_store_word
+                |2:
+            }
         case CMP:
             |mov ax, [r12+(rD*2)]
             |mov dx, [r12+(rS*2)]
             |cmp ax,dx
             break;
-		case JMP:
-			if(condition != AL){
-				fprintf(stderr, "Conditional indirect jumps not supported yet!\n");
-				exit(1);
-			}
-			|movzx rdi, word [r12+(rD*2)]
-			|callp branch_to
-			|mov rsp,rbp
-			|pop rbp
+        case JMP:
+            if(condition != AL){
+                fprintf(stderr, "Conditional indirect jumps not supported yet!\n");
+                exit(1);
+            }
+            |movzx rdi, word [r12+(rD*2)]
+            |callp branch_to
+            |mov rsp,rbp
+            |pop rbp
             |mov rdi,rax
-			|jmp rax
-			return -1;
-			break;
-		case SPEC:
-			|movzx rdi, word [r12+16]
-			|callp branch_to
-			|mov rsp,rbp
-			|pop rbp
+            |jmp rax
+            return -1;
+            break;
+        case SPEC:
+            |movzx rdi, word [r12+16]
+            |callp branch_to
+            |mov rsp,rbp
+            |pop rbp
             |mov rdi,rax
-			|jmp rax
-			return -1;
-		case SHL:
-			|shift_rr shl
-			break;
-		case SHR:
-			|shift_rr shr
-			break;
-		case ROL:
-			|shift_rr rol
-			break;
-		case RCL:
-			|shift_rr rcl
-			break;
-		case ADC:
-			|inst_rr adc
-			break;
-		case SBB:
-			|inst_rr sbb
-			break;
-		case SET:
-			switch (condition) {
-				case EQ:
-					|setcond sete
-					break;
-				case NE:
-					|setcond setne
-					break;
-				case OS:
-					|setcond seto
-					break;
-				case OC:
-					|setcond setno
-					break;
-				case HI:
-					|setcond seta
-					break;
-				case LS:
-					|setcond setbe
-					break;
-				case P:
-					|setcond setns
-					break;
-				case N:
-					|setcond sets
-					break;
-				case CS:
-					|setcond setc
-					break;
-				case CC:
-					|setcond setnc
-					break;
-				case GE:
-					|setcond setge
-					break;
-				case G:
-					|setcond setg
-					break;
-				case LE:
-					|setcond setle
-					break;
-				case L:
-					|setcond setl
-					break;
+            |jmp rax
+            return -1;
+        case SHL:
+            |shift_rr shl
+            break;
+        case SHR:
+            |shift_rr shr
+            break;
+        case ROL:
+            |shift_rr rol
+            break;
+        case RCL:
+            |shift_rr rcl
+            break;
+        case ADC:
+            |inst_rr adc
+            break;
+        case SBB:
+            |inst_rr sbb
+            break;
+        case SET:
+            switch (condition) {
+                case EQ:
+                    |setcond sete
+                    break;
+                case NE:
+                    |setcond setne
+                    break;
+                case OS:
+                    |setcond seto
+                    break;
+                case OC:
+                    |setcond setno
+                    break;
+                case HI:
+                    |setcond seta
+                    break;
+                case LS:
+                    |setcond setbe
+                    break;
+                case P:
+                    |setcond setns
+                    break;
+                case N:
+                    |setcond sets
+                    break;
+                case CS:
+                    |setcond setc
+                    break;
+                case CC:
+                    |setcond setnc
+                    break;
+                case GE:
+                    |setcond setge
+                    break;
+                case G:
+                    |setcond setg
+                    break;
+                case LE:
+                    |setcond setle
+                    break;
+                case L:
+                    |setcond setl
+                    break;
 
 
-			}
+            }
 
 
-		case TEST:
-			|inst_rr test
-			break;
+        case TEST:
+            |inst_rr test
+            break;
 
-		case PUSHLR:
-			|mov ax, [r12+16]
-			|movzx rdx, word [r12+(14)]
-			|lea rdx,[rdx-2]
-			|mov [r13+rdx], ax
-			|mov [r12+14], dx
-			break;
-		case SAR:
-			|shift_rr sar
-			break;
+        case PUSHLR:
+            |mov ax, [r12+16]
+            |movzx rdx, word [r12+(14)]
+            |lea rdx,[rdx-2]
+            |mov [r13+rdx], ax
+            |mov [r12+14], dx
+            break;
+        case SAR:
+            |shift_rr sar
+            break;
 
 
 
@@ -356,113 +356,113 @@ int jit_instruction(uint16_t* inst){
         case MOVI:
             |inst_ri mov
             break;
-		case ANDI:
-			|inst_ri and
-			break;
-		case ORI:
-			|inst_ri or
-			break;
-		case XORI:
-			|inst_ri xor
-			break;
-		case LDI:
-			if(reg_sel & DISP_FLAG){
-				if(reg_sel & BYTE_FLAG){
-					|mov rdi, imm
-					|add di, word [r12+(rS*2)]
-					|cmp rdi, 0xff00
-					|jge >1
-					|movzx rax, byte [r13+rdi]
-					|mov [r12+(rD*2)], ax
-					|jmp >2
-					|1:
-					|callp io_load_byte
-					|mov [r12+(rD*2)], ax
-					|2:
-				}else{
-					|mov rdi, imm
-					|add di, word [r12+(rS*2)]
-					|cmp rdi, 0xff00
-					|jge >1
-					|mov ax, [r13+rdi]
-					|mov [r12+(rD*2)], ax
-					|jmp >2
-					|1:
-					|callp io_load_word
-					|mov [r12+(rD*2)], ax
-					|2:
-				}
-			}else{
-				if(reg_sel & BYTE_FLAG){
-					if(imm >=0xff00){
-						|mov rdi, imm
-						|callp io_load_byte
-						|mov [r12+(rD*2)],al
-					}else{
-						|movzx rax, byte [r13+imm]
-						|mov [r12+(rD*2)],ax
-					}
-				}else{
-					if(imm >=0xff00){
-						|mov rdi, imm
-						|callp io_load_word
-						|mov [r12+(rD*2)],ax
-					}else{
-						|mov ax, [r13+imm]
-						|mov [r12+(rD*2)],ax
-					}
-				}
-			}
-			break;
-		case STI:
-			if(reg_sel & DISP_FLAG){
-				if(reg_sel & BYTE_FLAG){
-					|mov rdi,imm
-					|add di, [r12+(rS*2)]
-					|movzx rsi, byte [r12+(rD*2)]
-					|cmp rdi, 0xff00
-					|jge >1
-					|mov [r13+rdi], r6b
-					|jmp >2
-					|1:
-					|callp io_store_byte
-					|2:
-				}
-				else{
-					|mov rdi,imm
-					|add di, [r12+(rS*2)]
-					|movzx rsi, word [r12+(rD*2)]
-					|cmp rdi, 0xff00
-					|jge >1
-					|mov [r13+rdi], si
-					|jmp >2
-					|1:
-					|callp io_store_word
-					|2:
-				}
-			}else{
-				if(imm >= 0xff00){
-					if(reg_sel & BYTE_FLAG){
-						|mov rdi, imm
-						|mov r6b, [r12+(rD*2)] //si (low byte)
-						|callp io_store_byte
-					}else{
-						|mov rdi,imm
-						|mov si, [r12+(rD*2)]
-						|callp io_store_word
-					}
-				}else{
-					if(reg_sel & BYTE_FLAG){
-						|mov al, [r12+(rD*2)]
-						|mov [r13+imm],ax
-					}else{
-						|mov ax, [r12+(rD*2)]
-						|mov [r13+imm],ax
-					}
-				}
-			}
+        case ANDI:
+            |inst_ri and
+            break;
+        case ORI:
+            |inst_ri or
+            break;
+        case XORI:
+            |inst_ri xor
+            break;
+        case LDI:
+            if(reg_sel & DISP_FLAG){
+                if(reg_sel & BYTE_FLAG){
+                    |mov rdi, imm
+                    |add di, word [r12+(rS*2)]
+                    |cmp rdi, 0xff00
+                    |jge >1
+                    |movzx rax, byte [r13+rdi]
+                    |mov [r12+(rD*2)], ax
+                    |jmp >2
+                    |1:
+                    |callp io_load_byte
+                    |mov [r12+(rD*2)], ax
+                    |2:
+                }else{
+                    |mov rdi, imm
+                    |add di, word [r12+(rS*2)]
+                    |cmp rdi, 0xff00
+                    |jge >1
+                    |mov ax, [r13+rdi]
+                    |mov [r12+(rD*2)], ax
+                    |jmp >2
+                    |1:
+                    |callp io_load_word
+                    |mov [r12+(rD*2)], ax
+                    |2:
+                }
+            }else{
+                if(reg_sel & BYTE_FLAG){
+                    if(imm >=0xff00){
+                        |mov rdi, imm
+                        |callp io_load_byte
+                        |mov [r12+(rD*2)],al
+                    }else{
+                        |movzx rax, byte [r13+imm]
+                        |mov [r12+(rD*2)],ax
+                    }
+                }else{
+                    if(imm >=0xff00){
+                        |mov rdi, imm
+                        |callp io_load_word
+                        |mov [r12+(rD*2)],ax
+                    }else{
+                        |mov ax, [r13+imm]
+                        |mov [r12+(rD*2)],ax
+                    }
+                }
+            }
+            break;
+        case STI:
+            if(reg_sel & DISP_FLAG){
+                if(reg_sel & BYTE_FLAG){
+                    |mov rdi,imm
+                    |add di, [r12+(rS*2)]
+                    |movzx rsi, byte [r12+(rD*2)]
+                    |cmp rdi, 0xff00
+                    |jge >1
+                    |mov [r13+rdi], r6b
+                    |jmp >2
+                    |1:
+                    |callp io_store_byte
+                    |2:
+                }
+                else{
+                    |mov rdi,imm
+                    |add di, [r12+(rS*2)]
+                    |movzx rsi, word [r12+(rD*2)]
+                    |cmp rdi, 0xff00
+                    |jge >1
+                    |mov [r13+rdi], si
+                    |jmp >2
+                    |1:
+                    |callp io_store_word
+                    |2:
+                }
+            }else{
+                if(imm >= 0xff00){
+                    if(reg_sel & BYTE_FLAG){
+                        |mov rdi, imm
+                        |mov r6b, [r12+(rD*2)] //si (low byte)
+                        |callp io_store_byte
+                    }else{
+                        |mov rdi,imm
+                        |mov si, [r12+(rD*2)]
+                        |callp io_store_word
+                    }
+                }else{
+                    if(reg_sel & BYTE_FLAG){
+                        |mov al, [r12+(rD*2)]
+                        |mov [r13+imm],ax
+                    }else{
+                        |mov ax, [r12+(rD*2)]
+                        |mov [r13+imm],ax
+                    }
+                }
+            }
 
-			break;
+            break;
         case CMPI:
             |mov ax, [r12+(rD*2)]
             |cmp ax, imm
@@ -477,99 +477,99 @@ int jit_instruction(uint16_t* inst){
                     |mov rdi,rax
                     |jmp rax
                     return -1;
-				case EQ:
-					|cond_jmp jne
-					break;
+                case EQ:
+                    |cond_jmp jne
+                    break;
                 case NE:
                     |cond_jmp je
-					break;
-				case OS:
-					|cond_jmp jno
-					break;
-				case OC:
-					|cond_jmp jo
-					break;
-				case HI:
-					|cond_jmp jbe
-					break;
-				case LS:
-					|cond_jmp ja
-					break;
-				case P:
-					|cond_jmp js
-					break;
-				case N:
-					|cond_jmp jns
-					break;
+                    break;
+                case OS:
+                    |cond_jmp jno
+                    break;
+                case OC:
+                    |cond_jmp jo
+                    break;
+                case HI:
+                    |cond_jmp jbe
+                    break;
+                case LS:
+                    |cond_jmp ja
+                    break;
+                case P:
+                    |cond_jmp js
+                    break;
+                case N:
+                    |cond_jmp jns
+                    break;
                 case CS:
                     |cond_jmp jnc
-					break;
+                    break;
                 case CC:
                     |cond_jmp jc
-					break;
-				case GE:
-					|cond_jmp jl
-					break;
-				case G:
-					|cond_jmp jle
-					break;
-				case LE:
-					|cond_jmp jg
-					break;
-				case L:
-					|cond_jmp jge
-					break;
+                    break;
+                case GE:
+                    |cond_jmp jl
+                    break;
+                case G:
+                    |cond_jmp jle
+                    break;
+                case LE:
+                    |cond_jmp jg
+                    break;
+                case L:
+                    |cond_jmp jge
+                    break;
             }
 
             break;
-		case CALLI:
-			switch(condition){
-				case AL:
-					|mov rdi, imm
-					|mov word [r12+16], (addr+2)*2
-					|callp branch_to
-					|mov rsp,rbp
-					|pop rbp
+        case CALLI:
+            switch(condition){
+                case AL:
+                    |mov rdi, imm
+                    |mov word [r12+16], (addr+2)*2
+                    |callp branch_to
+                    |mov rsp,rbp
+                    |pop rbp
                     |mov rdi,rax
-					|jmp rax
-					break;
-				default:
-					fprintf(stderr,"Conditional CALLs not supported yet.\n");
-					exit(1);
+                    |jmp rax
+                    break;
+                default:
+                    fprintf(stderr,"Conditional CALLs not supported yet.\n");
+                    exit(1);
 
-			}
-			return -1;
-			break;
+            }
+            return -1;
+            break;
 
-		case SHLI:
-			|inst_ri shl
-			break;
-		case SHRI:
-			|inst_ri shr
-			break;
-		case ROLI:
-			|inst_ri rol
-			break;
-		case RCLI:
-			|inst_ri rcl
-			break;
-		case ADCI:
-			|inst_ri adc
-			break;
-		case SBBI:
-			|inst_ri sbb
-			break;
-		case TESTI:
-			|inst_ri test
-			break;
-		case SARI:
-			|inst_ri sar
-			break;
+        case SHLI:
+            |inst_ri shl
+            break;
+        case SHRI:
+            |inst_ri shr
+            break;
+        case ROLI:
+            |inst_ri rol
+            break;
+        case RCLI:
+            |inst_ri rcl
+            break;
+        case ADCI:
+            |inst_ri adc
+            break;
+        case SBBI:
+            |inst_ri sbb
+            break;
+        case TESTI:
+            |inst_ri test
+            break;
+        case SARI:
+            |inst_ri sar
+            break;
         case 0xFE: //flush
             |mov rdi,r14
             |callp flush
             return 1;
-		case 0xFF: return -1;
+        case 0xFF: return -1;
         default:
 
             break;
