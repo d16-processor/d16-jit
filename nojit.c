@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "cpu_intrinsics.h"
 #include "io.h"
-#define INST_RR(x) proc_state.regs[rD] = x; break;
+#define INST_RR(x) proc_state.regs[rD] = x; set_flags(x, op1, op2); break;
 #define LOAD(addr) *(main_memory + ((addr)/2))
 #define STORE(addr, data) *(main_memory+((addr)/2)) = data
 extern uint16_t* main_memory;
@@ -12,6 +12,13 @@ extern bool trace_mode;
 processor_state proc_state = {0};
 uint16_t ip = 0;
 int run_instruction(uint16_t*);
+
+void set_flags(int x, int o1, int o2){
+  proc_state.flag_z = x == 0;
+  proc_state.flag_c = (x & (1<<16)) != 0;
+  proc_state.flag_p = x >= 0;
+  proc_state.flag_v = ((o1 & (1<<15)) == (o2 & (1<<15))) && ((o1 & (1<<15)) != (x & (1<<15))); 
+}
 
 void finish(void){
   for(int i=0;i<8;i++){
@@ -35,7 +42,7 @@ void run_from_ip(void* dummy){
 
 int run_instruction(uint16_t* instruction){
   uint8_t rD, rS, condition;
-  uint16_t op1, op2;
+  int op1, op2;
   uint8_t reg_sel = *instruction & 0xff;
   rD = reg_sel & 0x7;
   rS = reg_sel >> 3 & 0x7;
@@ -51,7 +58,11 @@ int run_instruction(uint16_t* instruction){
     op1 = proc_state.regs[rD];
     op2 = proc_state.regs[rS];
   }
-  printf("Executing instruction %04x %d words\n", *instruction, retval);
+  printf("Executing instruction %04x ZCPV %d%d%d%d\n", *instruction,
+	 proc_state.flag_z,
+	 proc_state.flag_c,
+	 proc_state.flag_p,
+	 proc_state.flag_v);
   proc_state.instructions_executed += 1;
   switch(*instruction >> 8 & 0x7f){
   case ADD:    INST_RR(op1+op2);
@@ -75,6 +86,11 @@ int run_instruction(uint16_t* instruction){
     rD = (*instruction >> 8) - MOVB_R0;
     op2 = *instruction & 0xff;
   case MOV:    INST_RR(op2);
+  case AND:    INST_RR(op1&op2);
+  case OR:     INST_RR(op1|op2);
+  case XOR:    INST_RR(op1^op2);
+  case NOT:    INST_RR(~op1);
+  case NEG:    INST_RR(-op1);
     
   case 0x7f:
     return -1;

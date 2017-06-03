@@ -22,6 +22,11 @@ typedef struct{
     uint16_t link_register;
     uint16_t padding;
     uint32_t instructions_executed;
+    uint8_t flag_z:1;
+    uint8_t flag_c:1;
+    uint8_t flag_p:1;
+    uint8_t flag_v:1;
+    
 } processor_state;
 #define INSTRS_EXECUTED 20 //index into struct
 enum _Op_Type {
