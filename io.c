@@ -60,7 +60,7 @@ uint8_t io_read_status(void){
     unsigned int btx = atomic_load(&bytes_tx);
     int brx = atomic_load(&bytes_rx);
     if(btx != 8 || brx == 8){
-        usleep(100);
+        /*usleep(100);*/
         btx = atomic_load(&bytes_tx);
         brx = atomic_load(&bytes_rx);
     }

@@ -23,11 +23,13 @@ uintptr_t proc_ptr = (uintptr_t)&proc_state;
 extern uint16_t* main_memory;
 extern bool trace_mode;
 bool count_instructions = true;
+void cleanup_sound(void);
 
 char* inst_names[128] = {"NOP","ADD","SUB","PUSH","POP","MOVB","MOVB","MOVB","MOVB","MOVB","MOVB","MOVB","MOVB","MOV","AND","OR","XOR","NOT","NEG","LD","ST","CMP","JMP","CALL","RET","SHL","SHR","ROL","RCL","LDCP","STCP","ADC","SBB","SET","TEST","PUSHLR","SAR",0};
 int jit_instruction(uint16_t* inst);
 void finish(){
     io_destroy();
+    cleanup_sound();
     for(int i=0;i<8;i++){
           printf("r%d: %04x\n",i,proc_state.regs[i]);
     }
@@ -107,7 +109,6 @@ jit_function branch_to(uint16_t addr){
     |mov  rsp, rbp
     |callp finish
     |pop rbp
-
 
     jit_function func = jitcode(&state);
     g_hash_table_insert(trace_cache,GINT_TO_POINTER(addr),func);

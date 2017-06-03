@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <signal.h>
 #include "io.h"
 #include "jitter.h"
+#include "sound.h"
 bool trace_mode = false;
 uint16_t* main_memory;
 #define FMT_STRING "t"
-
+void finish(int);
 int main(int argc, char** argv){
     setenv("POSIXLY_CORRECT", "1",1);
     int c;
@@ -28,7 +30,10 @@ int main(int argc, char** argv){
         }
     }
     io_init();
-    init_jit();
+    init_sound();
+    signal(SIGINT, finish);
+    JIT_ONLY(init_jit();)
+    
     
     if(bin == NULL){
         fprintf(stderr, "Error opening file\n");

@@ -14,6 +14,8 @@
 #define IO_UART_DATA 0xff02
 #define IO_UART_STATUS 0xff03
 #define IO_UART_BAUD 0xff04
+#define TIMER_DATA 0xff06
+#define SOUND_DATA 0xff08
 
 #define UART_TX_NOT_FULL 1
 #define UART_TX_EMPTY 2

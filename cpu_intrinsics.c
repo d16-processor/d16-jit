@@ -8,10 +8,19 @@
 
 #include "cpu_intrinsics.h"
 #include "io.h"
+#include "timer.h"
+#include "sound.h"
 
 
 void io_store_word(uint16_t addr, uint16_t val){
-
+    switch(addr){
+        case TIMER_DATA:
+            timer_set(val);
+            break;
+        case SOUND_DATA:
+            sound_set(val);
+            break;
+    }
 }
 void write_leds(uint8_t data){
     printf("LEDS: ");
@@ -37,7 +46,13 @@ void io_store_byte(uint16_t addr, uint8_t val){
 	}
 }
 uint16_t io_load_word(uint16_t addr){
-	return 0;
+    switch(addr){
+        case TIMER_DATA:
+            return timer_get();
+        default:
+            fprintf(stderr,"Read from invalid IO address: %x\n",addr);
+            return 0;
+    }
 }
 uint8_t io_load_byte(uint16_t addr){
     switch(addr){

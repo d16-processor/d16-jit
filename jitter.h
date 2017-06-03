@@ -5,6 +5,12 @@
 #ifndef D16_JIT_JITTER_H
 #define D16_JIT_JITTER_H
 
+#ifndef NO_JIT
+#define JIT_ONLY(x) x
+#else
+#define JIT_ONLY(x)
+#endif
+
 #include <stdint.h>
 typedef void (*jit_function)(void*);
 jit_function branch_to(uint16_t addr);
