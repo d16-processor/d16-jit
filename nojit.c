@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include "cpu_intrinsics.h"
 #include "io.h"
+#define INST_RR(x) proc_state.regs[rD] = x; break;
+#define LOAD(addr) *(main_memory + ((addr)/2))
+#define STORE(addr, data) *(main_memory+((addr)/2)) = data
 extern uint16_t* main_memory;
 extern bool trace_mode;
 processor_state proc_state = {0};
@@ -51,9 +54,28 @@ int run_instruction(uint16_t* instruction){
   printf("Executing instruction %04x %d words\n", *instruction, retval);
   proc_state.instructions_executed += 1;
   switch(*instruction >> 8 & 0x7f){
-  case ADD:
-    proc_state.regs[rD] = op1+op2;
+  case ADD:    INST_RR(op1+op2);
+  case SUB:    INST_RR(op1-op2);
+  case PUSH:
+    proc_state.regs[7] -= 2;
+    STORE(proc_state.regs[7], op2);
     break;
+  case POP:
+    proc_state.regs[rD] = LOAD(proc_state.regs[7]);
+    proc_state.regs[7] += 2;
+    break;
+  case MOVB_R0:
+  case MOVB_R1:
+  case MOVB_R2:
+  case MOVB_R3:
+  case MOVB_R4:
+  case MOVB_R5:
+  case MOVB_R6:
+  case MOVB_R7: //Intentional fallthrough
+    rD = (*instruction >> 8) - MOVB_R0;
+    op2 = *instruction & 0xff;
+  case MOV:    INST_RR(op2);
+    
   case 0x7f:
     return -1;
     break;
