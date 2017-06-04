@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "cpu_intrinsics.h"
 #include "io.h"
-#define INST_RR(x) proc_state.regs[rD] = x; set_flags(x, op1, op2); break;
+#define INST_RR(x) proc_state.regs[rD] = x; set_flags(x);
 #define LOAD(addr) *(main_memory + ((addr)/2))
 #define STORE(addr, data) *(main_memory+((addr)/2)) = data
 #define FLAG_Z proc_state.flag_z
@@ -18,10 +18,13 @@ processor_state proc_state = {0};
 uint16_t ip = 0;
 int run_instruction(uint16_t*);
 
-void set_flags(int x, int o1, int o2){
+void set_flags(int x){
   proc_state.flag_z = x == 0;
   proc_state.flag_c = (x & (1<<16)) != 0;
   proc_state.flag_n = x >= 0;
+  proc_state.flag_v = 0;
+}
+void set_v_flag(int x, int o1, int o2){
   proc_state.flag_v = ((o1 & (1<<15)) == (o2 & (1<<15))) && ((o1 & (1<<15)) != (x & (1<<15))); 
 }
 bool eval_cond(uint8_t condition){
@@ -91,8 +94,8 @@ int run_instruction(uint16_t* instruction){
 	 proc_state.flag_v);
   proc_state.instructions_executed += 1;
   switch(*instruction >> 8 & 0x7f){
-  case ADD:    INST_RR(op1+op2);
-  case SUB:    INST_RR(op1-op2);
+  case ADD:    INST_RR(op1+op2); set_v_flag(op1+op2,op1,op2); break;
+  case SUB:    INST_RR(op1-op2); set_v_flag(op1-op2,op1,-op2); break;
   case PUSH:
     proc_state.regs[7] -= 2;
     STORE(proc_state.regs[7], op2);
@@ -111,15 +114,15 @@ int run_instruction(uint16_t* instruction){
   case MOVB_R7: //Intentional fallthrough
     rD = (inst >> 8) - MOVB_R0;
     op2 = inst & 0xff;
-  case MOV:    INST_RR(op2);
-  case AND:    INST_RR(op1&op2);
-  case OR:     INST_RR(op1|op2);
-  case XOR:    INST_RR(op1^op2);
-  case NOT:    INST_RR(~op1);
-  case NEG:    INST_RR(-op1);
+  case MOV:    INST_RR(op2); break;
+  case AND:    INST_RR(op1&op2); break;
+  case OR:     INST_RR(op1|op2); break;
+  case XOR:    INST_RR(op1^op2); break;
+  case NOT:    INST_RR(~op1); break;
+  case NEG:    INST_RR(-op1); break;
     // LD, ST
   case CMP:
-    set_flags(op1-op2, op1, op2); break;
+    set_flags(op1-op2); set_v_flag(op1-op2, op1, -op2); break;
   case JMP:
     if(eval_cond(condition)){
       if(inst&(1<<15)){
@@ -130,7 +133,31 @@ int run_instruction(uint16_t* instruction){
       return 0;
     }
     break;
-
+  case CALL:
+    if(eval_cond(condition)){
+      proc_state.link_register = ip + retval*2;
+      if(inst&(1<<15)){
+	ip=immediate;
+      } else {
+	ip=op1;
+      }
+      return 0;
+    }
+    break;
+  case SPEC: //ret
+    ip = proc_state.link_register;
+    return 0;
+    break;
+  case SHL:    INST_RR(op1 << (op2 & 0xf)); break;
+  case SHR:    INST_RR(op1 >> (op2 & 0xf)); break;
+  case ROL:    INST_RR(op1 << (op2 & 0xf) | op1 >> (16 - (op2 & 0xf)));
+  case RCL:
+    op1 |= FLAG_C << 16;
+    INST_RR(op1 << (op2 & 0xf) | op1 >> (17 - (op2 & 0xf)));
+    break;
+  case ADC:    INST_RR(op1+op2+FLAG_C); set_v_flag(op1+op2+FLAG_C, op1, op2+FLAG_C); break;
+  case SBB:    INST_RR(op1-op2-FLAG_C); set_v_flag(op1-op2-FLAG_C, op1, op2-FLAG_C); break;
+    
     
     
   case 0x7f:
