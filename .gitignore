@@ -5,3 +5,4 @@ build/
 .*.swp
 d16-jit/
 *~
+*.html
