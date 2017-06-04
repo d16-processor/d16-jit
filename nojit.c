@@ -148,16 +148,27 @@ int run_instruction(uint16_t* instruction){
     ip = proc_state.link_register;
     return 0;
     break;
-  case SHL:    INST_RR(op1 << (op2 & 0xf)); break;
-  case SHR:    INST_RR(op1 >> (op2 & 0xf)); break;
-  case ROL:    INST_RR(op1 << (op2 & 0xf) | op1 >> (16 - (op2 & 0xf)));
+  case SHL:    INST_RR((uint16_t)op1 << (op2 & 0xf)); break;
+  case SHR:    INST_RR((uint16_t)op1 >> (op2 & 0xf)); break;
+  case ROL:    INST_RR((uint16_t)op1 << (op2 & 0xf) | (uint16_t)op1 >> (16 - (op2 & 0xf)));
   case RCL:
     op1 |= FLAG_C << 16;
-    INST_RR(op1 << (op2 & 0xf) | op1 >> (17 - (op2 & 0xf)));
+    INST_RR((uint32_t)op1 << (op2 & 0xf) | (uint32_t)op1 >> (17 - (op2 & 0xf)));
     break;
   case ADC:    INST_RR(op1+op2+FLAG_C); set_v_flag(op1+op2+FLAG_C, op1, op2+FLAG_C); break;
   case SBB:    INST_RR(op1-op2-FLAG_C); set_v_flag(op1-op2-FLAG_C, op1, op2-FLAG_C); break;
-    
+  case SET:
+    if(eval_cond(condition)){
+      INST_RR(1);
+    } else {
+      INST_RR(0);
+    }
+    break;
+  case PUSHLR:
+    proc_state.regs[7] -= 2;
+    STORE(proc_state.regs[7], proc_state.link_register);
+    break;
+  case SAR: INST_RR((int16_t)op1 >> op2); break;
     
     
   case 0x7f:
