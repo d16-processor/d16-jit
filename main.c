@@ -30,7 +30,7 @@ int main(int argc, char** argv){
         }
     }
     io_init();
-    init_sound();
+    IF_MIDI(init_sound());
     signal(SIGINT, finish);
     JIT_ONLY(init_jit();)
     

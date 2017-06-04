@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "cpu_intrinsics.h"
 #include "io.h"
+#include "sound.h"
 #define INST_RR(x) proc_state.regs[rD] = x; set_flags(x);
 #define LOAD(addr) *(main_memory + ((addr)/2))
 #define STORE(addr, data) *(main_memory+((addr)/2)) = data
@@ -17,7 +18,7 @@ extern bool trace_mode;
 processor_state proc_state = {0};
 uint16_t ip = 0;
 int run_instruction(uint16_t*);
-void cleanup_sound(void);
+
 
 void set_flags(int x){
   proc_state.flag_z = x == 0;
@@ -51,7 +52,7 @@ bool eval_cond(uint8_t condition){
 
 void finish(void){
   io_destroy();
-  cleanup_sound();
+  IF_MIDI(cleanup_sound());
   for(int i=0;i<8;i++){
     printf("r%d: %04x\n", i, proc_state.regs[i]);
   }

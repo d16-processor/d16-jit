@@ -15,11 +15,11 @@
 void io_store_word(uint16_t addr, uint16_t val){
     switch(addr){
         case TIMER_DATA:
-            timer_set(val);
-            break;
+	  timer_set(val);
+	  break;
         case SOUND_DATA:
-            sound_set(val);
-            break;
+	  IF_MIDI(sound_set(val));
+	  break;
     }
 }
 void write_leds(uint8_t data){
