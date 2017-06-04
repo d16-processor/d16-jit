@@ -24,7 +24,7 @@ typedef struct{
     uint32_t instructions_executed;
     uint8_t flag_z:1;
     uint8_t flag_c:1;
-    uint8_t flag_p:1;
+    uint8_t flag_n:1;
     uint8_t flag_v:1;
     
 } processor_state;
