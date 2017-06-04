@@ -17,6 +17,7 @@ extern bool trace_mode;
 processor_state proc_state = {0};
 uint16_t ip = 0;
 int run_instruction(uint16_t*);
+void cleanup_sound(void);
 
 void set_flags(int x){
   proc_state.flag_z = x == 0;
@@ -49,6 +50,8 @@ bool eval_cond(uint8_t condition){
 }
 
 void finish(void){
+  io_destroy();
+  cleanup_sound();
   for(int i=0;i<8;i++){
     printf("r%d: %04x\n", i, proc_state.regs[i]);
   }
@@ -87,11 +90,11 @@ int run_instruction(uint16_t* instruction){
     op1 = proc_state.regs[rD];
     op2 = proc_state.regs[rS];
   }
-  printf("Executing instruction %04x ZCPV %d%d%d%d\n", inst,
-	 proc_state.flag_z,
-	 proc_state.flag_c,
-	 proc_state.flag_n,
-	 proc_state.flag_v);
+  /* printf("Executing instruction %04x ZCPV %d%d%d%d\n", inst, */
+  /* 	 proc_state.flag_z, */
+  /* 	 proc_state.flag_c, */
+  /* 	 proc_state.flag_n, */
+  /* 	 proc_state.flag_v); */
   proc_state.instructions_executed += 1;
   switch(*instruction >> 8 & 0x7f){
   case ADD:    INST_RR(op1+op2); set_v_flag(op1+op2,op1,op2); break;
@@ -120,7 +123,40 @@ int run_instruction(uint16_t* instruction){
   case XOR:    INST_RR(op1^op2); break;
   case NOT:    INST_RR(~op1); break;
   case NEG:    INST_RR(-op1); break;
-    // LD, ST
+  case LD:
+  case ST:
+    {
+    uint16_t addr;
+    if(inst&(1<<6)){		/* Displacement */
+      addr = proc_state.regs[rS] + immediate;
+    } else {			/* Regular */
+      addr = op2;
+    }
+    if(addr < 0xff00){
+      if(((inst>>8) & 0x7f) == ST){
+	if(inst&(1<<7)){		/* Byte */
+	  *((uint8_t*) main_memory + addr) = (uint8_t) proc_state.regs[rD] & 0xff;
+	} else {			/* Word */
+	  *(main_memory + addr/2) = proc_state.regs[rD];
+	}
+      } else { //LD
+	if(inst&(1<<7)){
+	  proc_state.regs[rD] = *((uint8_t*)main_memory + addr);
+	} else {
+	  proc_state.regs[rD] = *(main_memory+addr/2);
+	}
+      }
+    } else {
+      if(((inst>>8) & 0x7f) == ST){
+	if(inst&(1<<7)) io_store_byte(addr, proc_state.regs[rD]);
+	else            io_store_word(addr, proc_state.regs[rD]);
+      }else{
+	if(inst&(1<<7)) proc_state.regs[rD] = io_load_byte(addr);
+	else            proc_state.regs[rD] = io_load_word(addr);
+      }
+    }
+    break;
+  }
   case CMP:
     set_flags(op1-op2); set_v_flag(op1-op2, op1, -op2); break;
   case JMP:

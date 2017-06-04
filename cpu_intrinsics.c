@@ -35,14 +35,14 @@ void write_leds(uint8_t data){
 void io_store_byte(uint16_t addr, uint8_t val){
 	switch (addr){
         case IO_LED_DATA:
-            write_leds(val);
-            break;
-		case IO_UART_DATA:
-			cpu_thread_write_byte(val);
-			break;
-		default:
-			fprintf(stderr, "Write to invalid IO address: %x\n",addr);
-			break;
+	  write_leds(val);
+	  break;
+	case IO_UART_DATA:
+	  cpu_thread_write_byte(val);
+	  break;
+	default:
+	  fprintf(stderr, "Write to invalid IO address: %x\n",addr);
+	  break;
 	}
 }
 uint16_t io_load_word(uint16_t addr){
