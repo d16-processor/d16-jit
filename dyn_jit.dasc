@@ -269,7 +269,23 @@ int jit_instruction(uint16_t* inst){
         case RCL:
             |shift_rr rcl
             break;
-        case ADC:
+	    case LDCP:
+			if(condition == 0){	/* FLAGS */
+				| pushf
+				| pop rdx
+                | xor rax, rax
+                | bt dx, 11  // overflow flag
+                | rcl eax, 1
+                | bt dx, 7   // sign flag
+                | rcl eax, 1
+                | bt dx, 0   // carry flag
+                | rcl eax, 1
+                | bt dx, 6 //zero flag
+                | rcl eax, 1
+                | mov word [r12+(rD*2)], ax
+			}
+            break;
+	    case ADC:
             |inst_rr adc
             break;
         case SBB:
