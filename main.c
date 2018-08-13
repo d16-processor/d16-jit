@@ -8,7 +8,9 @@
 #include "sound.h"
 bool trace_mode = false;
 uint16_t* main_memory;
-#define FMT_STRING "t"
+#define FMT_STRING "td:e:"
+FILE* dump_file = NULL;
+int dumpaddr_end = 0;
 void finish(int);
 int main(int argc, char** argv){
     setenv("POSIXLY_CORRECT", "1",1);
@@ -20,6 +22,12 @@ int main(int argc, char** argv){
                 case 't':
                     trace_mode = true;
                     break;
+	        case 'd':
+		    dump_file = fopen(optarg, "wb");
+		    break;
+		case 'e':
+		    dumpaddr_end = strtol(optarg, NULL, 0);
+		    break;
             }
         }
         else{
@@ -45,6 +53,7 @@ int main(int argc, char** argv){
     
     jit_function  f = branch_to(0);
     f(f);
+    
 
     return 0;
 }

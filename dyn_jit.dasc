@@ -22,6 +22,8 @@ processor_state proc_state;
 uintptr_t proc_ptr = (uintptr_t)&proc_state;
 extern uint16_t* main_memory;
 extern bool trace_mode;
+extern FILE *dump_file;
+extern int dumpaddr_end;
 bool count_instructions = true;
 void cleanup_sound(void);
 
@@ -32,6 +34,11 @@ void finish(){
     //cleanup_sound();
     for(int i=0;i<8;i++){
           printf("r%d: %04x\n",i,proc_state.regs[i]);
+    }
+    if(dump_file){
+      fwrite(main_memory,1,dumpaddr_end,dump_file);
+      fclose(dump_file);
+	
     }
     printf("Instructions executed: %d\n", proc_state.instructions_executed);
     exit(0);
@@ -50,7 +57,8 @@ void print_flags(long long flags){
     if(flags&2048) flagstr[3] = '1';//overflow flag
     fprintf(stderr, "%s ",flagstr);
 }
-void trace_instruction(uint8_t opcode, long long flags){
+void trace_instruction(uint8_t opcode, long long flags, int addr){
+    fprintf(stderr,"%04x-", addr);
     fprintf(stderr,"%-4s: NZCV ",inst_names[opcode]);
     print_flags(flags);
     for(int i=0;i<8;i++){
@@ -58,7 +66,7 @@ void trace_instruction(uint8_t opcode, long long flags){
     }
     fprintf(stderr,"\n");
 }
-void jit_trace(uint16_t* inst){
+void jit_trace(uint16_t* inst, int addr){
     if(trace_mode){
         uint8_t opcode = (*inst >>8) & 0x7f;
         |pushf
@@ -66,6 +74,7 @@ void jit_trace(uint16_t* inst){
         |mov rdi, opcode 
         |pushf
         |pop rsi
+	|mov rdx, addr
         |callp trace_instruction
         |pop r11
         |popf
@@ -133,7 +142,7 @@ int jit_instruction(uint16_t* inst){
         | mov [r12+20], eax
         | pop rax
     }
-    jit_trace(inst);
+    jit_trace(inst, addr*2);
     switch(opcode){
         case ADD:
             |inst_rr add
