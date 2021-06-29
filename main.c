@@ -3,9 +3,12 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <getopt.h>
 #include "io.h"
 #include "jitter.h"
 #include "sound.h"
+
+
 bool trace_mode = false;
 uint16_t* main_memory;
 #define FMT_STRING "t"
