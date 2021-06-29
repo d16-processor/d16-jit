@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 typedef void (*jit_function)(void*);
-jit_function branch_to(uint16_t addr);
+jit_function branch_to(uint16_t addr, uint8_t rewrite);
 void init_jit();
 
 

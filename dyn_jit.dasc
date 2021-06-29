@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <glib.h>
+#include <sys/mman.h>
 | .arch x64
 |.globals glob_
 |.actionlist actions
@@ -78,11 +79,57 @@ void flush(jit_function* func){
     fprintf(stderr,"Flushing trace cache\n");
     g_hash_table_foreach_remove(trace_cache,foreach_clear_table,func);
 }
-jit_function branch_to(uint16_t addr){
+jit_function branch_to(uint16_t addr, uint8_t rewrite){
     //printf("branch to: %04x\n",addr);
     if(g_hash_table_contains(trace_cache,GINT_TO_POINTER(addr))){
         //printf("Taking cached branch\n");
-        return g_hash_table_lookup(trace_cache,GINT_TO_POINTER(addr));
+        jit_function func = g_hash_table_lookup(trace_cache,GINT_TO_POINTER(addr));
+	if(rewrite){
+	    // Get address of caller
+	    void* return_addr = __builtin_return_address(0);
+
+	    // Get address of the movabs that generated the calling address
+	    void* movabs_addr = return_addr-12;
+	    // Get the address of the 64 bit data for the movabs
+	    uint64_t* movabs_data = (uint64_t*)(movabs_addr+2);
+
+	    uint16_t* call_addr = return_addr-2;
+
+	    // Make the code writable
+	    void* movabs_page = (void*)((uintptr_t)movabs_data & ~((1<<12)-1));
+	    void* movabs_page2 = (void*)((uintptr_t)return_addr & ~((1<<12)-1));
+	    int success = mprotect(movabs_page, sizeof(uint64_t), PROT_WRITE);
+	    if(success < 0){
+		perror("mprotect");
+		exit(1);
+	    }
+	    if(movabs_page2 != movabs_page){
+		success = mprotect(movabs_page2, sizeof(uint64_t), PROT_WRITE);
+		if(success < 0){
+		    perror("mprotect");
+		    exit(1);
+		}
+	    }
+	    // Rewrite the movabs to load the address of the JITed function
+	    *movabs_data = func;
+	    // Replace the call with a NOP so we don't overflow the stack
+	    *call_addr = 0x9066; // 2 byte NOP
+
+	    // Make the code executable
+	    success = mprotect(movabs_page, sizeof(uint64_t), PROT_EXEC | PROT_READ);
+	    if(success < 0){
+		perror("mprotect");
+		exit(1);
+	    }
+	    if(movabs_page2 != movabs_page){
+		success = mprotect(movabs_page2, sizeof(uint64_t), PROT_EXEC | PROT_READ);
+		if(success < 0){
+		    perror("mprotect");
+		    exit(1);
+		}
+	    }
+	}
+	return func;
     }
     initjit(&state,actions);
     //printf("Compiling a branch to %04x\n",addr);
@@ -242,6 +289,7 @@ int jit_instruction(uint16_t* inst){
                 exit(1);
             }
             |movzx rdi, word [r12+(rD*2)]
+	    |mov rsi, 1
             |callp branch_to
             |mov rsp,rbp
             |pop rbp
@@ -251,6 +299,7 @@ int jit_instruction(uint16_t* inst){
             break;
         case SPEC:
             |movzx rdi, word [r12+16]
+	    |mov rsi, 1
             |callp branch_to
             |mov rsp,rbp
             |pop rbp
@@ -488,6 +537,7 @@ int jit_instruction(uint16_t* inst){
             switch(condition){
                 case AL:
                     |mov rdi, imm
+		    |mov rsi, 1
                     |callp branch_to
                     |mov rsp,rbp
                     |pop rbp
@@ -544,6 +594,7 @@ int jit_instruction(uint16_t* inst){
                 case AL:
                     |mov rdi, imm
                     |mov word [r12+16], (addr+2)*2
+		    |mov rsi, 1
                     |callp branch_to
                     |mov rsp,rbp
                     |pop rbp

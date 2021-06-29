@@ -46,7 +46,7 @@ int main(int argc, char** argv){
     fread(main_memory,1,65535,bin);
     fclose(bin);
     
-    jit_function  f = branch_to(0);
+    jit_function  f = branch_to(0, 0);
     f(f);
 
     return 0;
